@@ -1,41 +1,69 @@
-FROM php:7.2
+FROM php:7.4-fpm
+
+# Arguments defined in docker-compose.yml
+ARG user
+ARG uid
+
+ENV DEBIAN_FRONTEND noninteractive
+ENV TZ=UTC
+
+RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
+
+COPY . /var/www/html/
+
+# Set working directory
+WORKDIR /var/www/html
+
 RUN apt-get update
-RUN apt-get install -y git \
-                       wget \
-                       alien \
-                       libaio1 \
-                       apt-transport-https \
-                       curl \
-                       libmcrypt-dev \
-                       zlib1g-dev \
-                           libzip-dev \
-                           libonig-dev \
-                       libxslt-dev \
-                       libpng-dev \
-                       libfontconfig \
-                       ca-certificates\
-                        gnupg\
-                        ghostscript
-RUN apt-get update -y \
-  && apt-get install -y \
-     libxml2-dev \
-  && apt-get clean -y \
-  && docker-php-ext-install soap                          
-
-WORKDIR /tmp
-
-# Install Composer
-RUN curl https://getcomposer.org/installer | php
-RUN mv composer.phar /usr/bin/composer
+RUN apt-get update && apt-get install -y \ 
+    git \
+    wget \
+    alien \
+    libaio1 \
+    apt-transport-https \
+    curl \
+    libmcrypt-dev \
+    zlib1g-dev \
+    libzip-dev \
+    libpng-dev \
+    libonig-dev \
+    libxml2-dev \
+    libxslt-dev \
+    libfontconfig \
+    ca-certificates \
+    gnupg \
+    ghostscript \
+    zip \
+    unzip \
+    gosu \
+    ca-certificates \
+    sqlite3 \ 
+    libcap2-bin \
+    python2 \
+    && mkdir -p ~/.gnupg \
+    && chmod 600 ~/.gnupg \
+    && echo "disable-ipv6" >> ~/.gnupg/dirmngr.conf \
+    && apt-key adv --homedir ~/.gnupg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys E5267A6C \
+    && apt-key adv --homedir ~/.gnupg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C300EE8C \
+    && echo "deb http://ppa.launchpad.net/ondrej/php/ubuntu focal main" > /etc/apt/sources.list.d/ppa_ondrej_php.list \
+    && apt-get update \
+    && curl -sL https://deb.nodesource.com/setup_15.x | bash - \
+    && apt-get install -y nodejs \
+    && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
+    && echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
+    && apt-get update \
+    && apt-get install -y yarn \
+    && apt-get install -y postgresql-client \
+    && apt-get -y autoremove \
+    && apt-get clean \
+    && docker-php-ext-install soap \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Instaling and configuring oracle client
-ADD ./oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm /tmp/oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm
-ADD ./oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
-
+ADD oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm /tmp/oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm
+ADD oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
 RUN alien -i oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm
-
 RUN alien -i oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
-
 ENV LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client64/lib/${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
 RUN echo "/usr/lib/oracle/12.1/client64/lib/" > /etc/ld.so.conf.d/oracle.conf && chmod o+r /etc/ld.so.conf.d/oracle.conf
 ENV ORACLE_HOME=/usr/lib/oracle/12.1/client64
@@ -43,8 +71,6 @@ ENV C_INCLUDE_PATH=/usr/include/oracle/12.1/client64/
 RUN ls -al /usr/include/oracle/12.1/client*/*
 RUN ls -al $ORACLE_HOME/lib
 RUN ln -s /usr/include/oracle/12.1/client64 $ORACLE_HOME/include
-
-
 
 RUN docker-php-ext-install -j$(nproc) oci8 \
                                         pdo \
@@ -56,43 +82,21 @@ RUN docker-php-ext-install -j$(nproc) oci8 \
                                         mysqli \
                                         pdo_mysql \
                                         xsl \
-                                        gd
+                                        bcmath \
+                                        exif \
+                                        gd 
 
+# Install Composer
+COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
-ENV XDEBUGINI_PATH=/usr/local/etc/php/conf.d/xdebug.ini
-RUN yes | pecl install xdebug
-RUN echo "zend_extension="`find /usr/local/lib/php/extensions/ -iname 'xdebug.so'` > $XDEBUGINI_PATH \
-    && echo "xdebug.remote_enable=on" >> $XDEBUGINI_PATH \
-    && echo "xdebug.remote_autostart=on" >> $XDEBUGINI_PATH \
-    && echo "xdebug.remote_connect_back=on" >> $XDEBUGINI_PATH \
-    && echo "xdebug.idkey=xdbg" >> $XDEBUGINI_PATH \
-    && echo "xdebug.remote_handler=dbgp" >> $XDEBUGINI_PATH \
-    && echo "xdebug.profiler_enable=0" >> $XDEBUGINI_PATH \
-    && echo "xdebug.profiler_output_dir=\"/var/www/html\""  >> $XDEBUGINI_PATH \
-    && echo "xdebug.remote_port=9000"  >> $XDEBUGINI_PATH
+# Create system user to run Composer and Artisan Commands
+RUN useradd -G www-data,root -u $uid -d /home/$user $user
+RUN mkdir -p /home/$user/.composer && \
+    chown -R $user:$user /home/$user && \
+    chown -R $user:$user /var/www/html/
 
-RUN echo "xdebug.remote_host="`/sbin/ip route|awk '/default/ { print $3 }'` >> $XDEBUGINI_PATH
+# RUN mv "php.ini" "$PHP_INI_DIR/php.ini"
 
-# Microsoft SQL Server Prerequisites
-RUN curl https://packages.microsoft.com/keys/microsoft.asc | apt-key add -
-#RUN curl https://packages.microsoft.com/config/ubuntu/18.04/prod.list > /etc/apt/sources.list.d/mssql-tools.list
-RUN curl https://packages.microsoft.com/config/debian/8/prod.list > /etc/apt/sources.list.d/mssql-release.list
-RUN apt-get update
-RUN echo 'y' | ACCEPT_EULA=Y apt-get install msodbcsql17 mssql-tools
-RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bash_profile
-RUN echo 'export PATH="$PATH:/opt/mssql-tools/bin"' >> ~/.bashrc
-RUN apt-get install -y unixodbc-dev
-RUN pecl install  sqlsrv \
-    && pecl install pdo_sqlsrv \
-    && docker-php-ext-enable sqlsrv pdo_sqlsrv
+USER $user
 
-    RUN apt-get update -yqq \
-    && apt-get install -y --no-install-recommends openssl \ 
-    && sed -i 's,^\(MinProtocol[ ]*=\).*,\1'TLSv1.0',g' /etc/ssl/openssl.cnf \
-    && sed -i 's,^\(CipherString[ ]*=\).*,\1'DEFAULT@SECLEVEL=1',g' /etc/ssl/openssl.cnf\
-    && rm -rf /var/lib/apt/lists/*
-
-ENV DIR=/var/www/html/
-RUN mkdir -p $DIR
-ADD ./bin/phantomjs /usr/bin/phantomjs
-WORKDIR $DIR
+EXPOSE 9000
