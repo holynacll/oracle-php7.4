@@ -1,4 +1,4 @@
-FROM php:7.4-fpm
+FROM php:7.4-fpm-buster
 
 # Arguments defined in docker-compose.yml
 ARG user
@@ -22,6 +22,7 @@ RUN apt-get update && apt-get install -y \
     libaio1 \
     apt-transport-https \
     curl \
+    apt-utils \
     libmcrypt-dev \
     zlib1g-dev \
     libzip-dev \
@@ -33,8 +34,8 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     gnupg \
     ghostscript \
-    zip \
-    unzip \
+    # zip \
+    # unzip \
     gosu \
     ca-certificates \
     sqlite3 \ 
@@ -53,7 +54,6 @@ RUN apt-get update && apt-get install -y \
     && echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
     && apt-get update \
     && apt-get install -y yarn \
-    && apt-get install -y postgresql-client \
     && apt-get -y autoremove \
     && apt-get clean \
     && docker-php-ext-install soap \
@@ -96,6 +96,8 @@ RUN mkdir -p /home/$user/.composer && \
     chown -R $user:$user /var/www/html/
 
 # RUN mv "php.ini" "$PHP_INI_DIR/php.ini"
+
+# ADD ./bin/phantomjs /usr/bin/phantomjs
 
 USER $user
 
