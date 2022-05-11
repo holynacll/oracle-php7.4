@@ -1,18 +1,15 @@
 FROM php:7.4-fpm-buster
 
 # Arguments defined in docker-compose.yml
-ARG user
-ARG uid
+ENV user=1001
+ENV uid=1001
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ=UTC
 
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
-COPY . /var/www/html/
-
-# Set working directory
-WORKDIR /var/www/html
+WORKDIR /tmp
 
 RUN apt-get update
 RUN apt-get update && apt-get install -y \ 
