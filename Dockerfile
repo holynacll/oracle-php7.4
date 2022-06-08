@@ -1,8 +1,4 @@
-FROM php:7.0-fpm-buster
-
-# Arguments defined in docker-compose.yml
-ENV user=1001
-ENV uid=1001
+FROM php:7.2-fpm
 
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ=UTC
@@ -10,6 +6,8 @@ ENV TZ=UTC
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 WORKDIR /tmp
+
+RUN mkdir /usr/share/man/man1/
 
 RUN apt-get update
 RUN apt-get update && apt-get install -y \ 
@@ -31,8 +29,12 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     gnupg \
     ghostscript \
-    # zip \
-    # unzip \
+    tesseract-ocr \
+    libtesseract-dev \
+    pdftk-java \
+    poppler-utils \
+    zip \
+    unzip \
     gosu \
     ca-certificates \
     sqlite3 \ 
@@ -45,7 +47,7 @@ RUN apt-get update && apt-get install -y \
     && apt-key adv --homedir ~/.gnupg --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C300EE8C \
     && echo "deb http://ppa.launchpad.net/ondrej/php/ubuntu focal main" > /etc/apt/sources.list.d/ppa_ondrej_php.list \
     && apt-get update \
-    && curl -sL https://deb.nodesource.com/setup_15.x | bash - \
+    && curl -sL https://deb.nodesource.com/setup_14.x | bash - \
     && apt-get install -y nodejs \
     && curl -sS https://dl.yarnpkg.com/debian/pubkey.gpg | apt-key add - \
     && echo "deb https://dl.yarnpkg.com/debian/ stable main" > /etc/apt/sources.list.d/yarn.list \
@@ -85,17 +87,3 @@ RUN docker-php-ext-install -j$(nproc) oci8 \
 
 # Install Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
-
-# Create system user to run Composer and Artisan Commands
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user && \
-    chown -R $user:$user /var/www/html/
-
-# RUN mv "php.ini" "$PHP_INI_DIR/php.ini"
-
-# ADD ./bin/phantomjs /usr/bin/phantomjs
-
-USER $user
-
-EXPOSE 9000
