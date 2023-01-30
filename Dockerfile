@@ -57,17 +57,17 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Instaling and configuring oracle client
-ADD oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm /tmp/oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm
-ADD oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm /tmp/oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
-RUN alien -i oracle-instantclient12.1-basic-12.1.0.2.0-1.x86_64.rpm
-RUN alien -i oracle-instantclient12.1-devel-12.1.0.2.0-1.x86_64.rpm
-ENV LD_LIBRARY_PATH=/usr/lib/oracle/12.1/client64/lib/${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
-RUN echo "/usr/lib/oracle/12.1/client64/lib/" > /etc/ld.so.conf.d/oracle.conf && chmod o+r /etc/ld.so.conf.d/oracle.conf
-ENV ORACLE_HOME=/usr/lib/oracle/12.1/client64
-ENV C_INCLUDE_PATH=/usr/include/oracle/12.1/client64/
-RUN ls -al /usr/include/oracle/12.1/client*/*
+ADD oracle-instantclient19.18-basic-19.18.0.0.0-1.x86_64.rpm /tmp/oracle-instantclient19.18-basic-19.18.0.0.0-1.x86_64.rpm
+ADD oracle-instantclient19.18-devel-19.18.0.0.0-1.x86_64.rpm /tmp/oracle-instantclient19.18-devel-19.18.0.0.0-1.x86_64.rpm
+RUN alien -i oracle-instantclient19.18-basic-19.18.0.0.0-1.x86_64.rpm 
+RUN alien -i oracle-instantclient19.18-devel-19.18.0.0.0-1.x86_64.rpm
+ENV LD_LIBRARY_PATH=/usr/lib/oracle/19.18/client64/lib/${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}
+RUN echo "/usr/lib/oracle/19.18/client64/lib/" > /etc/ld.so.conf.d/oracle.conf && chmod o+r /etc/ld.so.conf.d/oracle.conf
+ENV ORACLE_HOME=/usr/lib/oracle/19.18/client64
+ENV C_INCLUDE_PATH=/usr/include/oracle/19.18/client64/
+RUN ls -al /usr/include/oracle/19.18/client*/*
 RUN ls -al $ORACLE_HOME/lib
-RUN ln -s /usr/include/oracle/12.1/client64 $ORACLE_HOME/include
+RUN ln -s /usr/include/oracle/19.18/client64 $ORACLE_HOME/include
 
 RUN docker-php-ext-install -j$(nproc) oci8 \
                                         pdo \
