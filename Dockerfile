@@ -1,4 +1,4 @@
-FROM php:7.4-fpm-buster
+FROM php:7.2.34
 
 # Arguments defined in docker-compose.yml
 ENV user=1001
