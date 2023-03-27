@@ -31,8 +31,12 @@ RUN apt-get update && apt-get install -y \
     ca-certificates \
     gnupg \
     ghostscript \
-    # zip \
-    # unzip \
+    tesseract-ocr \
+    libtesseract-dev \
+    pdftk-java \
+    poppler-utils \
+    zip \
+    unzip \
     gosu \
     ca-certificates \
     sqlite3 \ 
