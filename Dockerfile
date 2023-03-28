@@ -1,4 +1,4 @@
-FROM php:7.2.34
+FROM php:7.2.34-fpm-buster
 
 # Arguments defined in docker-compose.yml
 ENV user=1001
@@ -33,12 +33,11 @@ RUN apt-get update && apt-get install -y \
     ghostscript \
     tesseract-ocr \
     libtesseract-dev \
-    pdftk-java \
     poppler-utils \
+    supervisor \
     zip \
     unzip \
     gosu \
-    ca-certificates \
     sqlite3 \ 
     libcap2-bin \
     python2 \
@@ -94,12 +93,7 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 RUN useradd -G www-data,root -u $uid -d /home/$user $user
 RUN mkdir -p /home/$user/.composer && \
     chown -R $user:$user /home/$user && \
-    chown -R $user:$user /var/www/html/
+    chown -R $user:$user /var/www/
 
-# RUN mv "php.ini" "$PHP_INI_DIR/php.ini"
-
-# ADD ./bin/phantomjs /usr/bin/phantomjs
-
-USER $user
-
-EXPOSE 9000
+RUN mkdir -p /usr/share/man/man1
+RUN apt-get update && apt-get install -y pdftk
