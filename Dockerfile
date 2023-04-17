@@ -1,9 +1,5 @@
 FROM php:7.2.34-fpm-buster
 
-# Arguments defined in docker-compose.yml
-ENV user=1001
-ENV uid=1001
-
 ENV DEBIAN_FRONTEND noninteractive
 ENV TZ=UTC
 
@@ -87,13 +83,7 @@ RUN docker-php-ext-install -j$(nproc) oci8 \
                                         gd 
 
 # Install Composer
-COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
-
-# Create system user to run Composer and Artisan Commands
-RUN useradd -G www-data,root -u $uid -d /home/$user $user
-RUN mkdir -p /home/$user/.composer && \
-    chown -R $user:$user /home/$user && \
-    chown -R $user:$user /var/www/
+COPY --from=composer:2.2.21 /usr/bin/composer /usr/bin/composer
 
 # install pdftk
 RUN mkdir -p /usr/share/man/man1
