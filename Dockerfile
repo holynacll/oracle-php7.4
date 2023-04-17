@@ -87,7 +87,7 @@ RUN docker-php-ext-install -j$(nproc) oci8 \
                                         gd 
 
 # Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+COPY --from=composer:2.2 /usr/bin/composer /usr/bin/composer
 
 # Create system user to run Composer and Artisan Commands
 RUN useradd -G www-data,root -u $uid -d /home/$user $user
@@ -95,5 +95,6 @@ RUN mkdir -p /home/$user/.composer && \
     chown -R $user:$user /home/$user && \
     chown -R $user:$user /var/www/
 
+# install pdftk
 RUN mkdir -p /usr/share/man/man1
 RUN apt-get update && apt-get install -y pdftk
